@@ -24,8 +24,9 @@ function usePollData(id?: string) {
 
 function Results({ poll, options, votes, questions, large = false }: { poll: Poll; options: Option[]; votes: Vote[]; questions: Question[]; large?: boolean }) {
   if (poll.type === 'qa') return <div className={`questions ${large ? 'large-results' : ''}`}>{questions.length ? questions.map((q,i) => <div className="question-item" key={q.id}><span className="rank">{i + 1}</span><p>{q.question_text}</p><b>▲ {q.upvotes}</b></div>) : <div className="results-empty">Questions from your audience will appear here.</div>}</div>
-  const max = Math.max(...options.map(o => votes.filter(v => v.option_id === o.id).length), 1)
-  return <div className={`bars ${large ? 'large-results' : ''}`}>{options.map((o,i) => { const n=votes.filter(v=>v.option_id===o.id).length; const percent=Math.round(n / Math.max(votes.length,1)*100); return <div className="bar-row" key={o.id}><div className="bar-label"><span>{o.option_text}</span><b>{n} <small>({percent}%)</small></b></div><div className="track"><div className="fill" style={{ width: `${n/max*100}%`, background: colors[i] }} /></div></div>})}</div>
+  if (!votes.length) return <div className={`results-empty vote-empty ${large ? 'large-results' : ''}`}><span>◌</span><p>No votes yet — waiting for the room to respond...</p></div>
+  const results = options.map(option => ({ option, count: votes.filter(v => v.option_id === option.id).length })).sort((a, b) => b.count - a.count || a.option.display_order - b.option.display_order)
+  return <div className={`bars ${large ? 'large-results' : ''}`}><div className="chart-total"><span>Total responses</span><b>{votes.length}</b></div>{results.map(({option,count}) => { const percent=Math.round(count / votes.length*100); const color=colors[option.display_order % colors.length]; return <div className="bar-row" key={option.id}><div className="bar-label"><span>{option.option_text}</span><b>{count} <small>{percent}%</small></b></div><div className="track"><div className="fill" style={{ width: `${percent}%`, background: color }} /></div></div>})}</div>
 }
 
 function Dashboard() { const [polls,setPolls]=useState<Poll[]>([]); const [counts,setCounts]=useState<Record<string,number>>({}); const [loading,setLoading]=useState(true)
